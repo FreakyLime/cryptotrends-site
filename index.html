@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Cryptotrends VIP – Daily Crypto Analysis & Charts</title>
+  <meta name="description" content="Fresh, explainable crypto analysis with candlestick charts. Browse symbols, read insights, and share public chart links hosted on Supabase Storage." />
+  <link rel="canonical" href="https://cryptotrends.vip/" />
+
+  <!-- Open Graph / Twitter -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Cryptotrends VIP – Daily Crypto Analysis & Charts" />
+  <meta property="og:description" content="Fresh, explainable crypto analysis with candlestick charts. Browse symbols, read insights, and share public chart links." />
+  <meta property="og:image" content="https://cryptotrends.vip/og-cover.png" />
+  <meta property="og:url" content="https://cryptotrends.vip/" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <!-- Robots -->
+  <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
+
+  <!-- Favicon (optional) -->
+  <link rel="icon" href="/favicon.ico" />
+
+  <!-- Tailwind (CDN build with JIT & arbitrary values enabled) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Brand tokens (no raw hex) -->
+  <style>
+    :root{
+      --brand-bg: rgb(8,15,23);
+      --brand-surface: rgb(16,24,35);
+      --brand-hover: rgba(255,255,255,0.06);
+      --brand-border: rgba(255,255,255,0.08);
+      --brand-text: rgba(255,255,255,0.92);
+      --brand-muted: rgba(255,255,255,0.64);
+      --brand-primary: rgb(16,185,129); /* emerald-500 */
+      --brand-primary-hover: rgb(5,150,105); /* emerald-600 */
+      --brand-card: rgba(255,255,255,0.04);
+    }
+    .bg-brand{ background: var(--brand-bg); }
+    .surface{ background: var(--brand-surface); }
+    .hover-surface:hover{ background: var(--brand-hover); }
+    .border-brand{ border-color: var(--brand-border); }
+    .text-brand{ color: var(--brand-text); }
+    .text-muted{ color: var(--brand-muted); }
+    .btn-primary{ background: var(--brand-primary); color:white; }
+    .btn-primary:hover{ background: var(--brand-primary-hover); }
+    .card{ background: var(--brand-card); border:1px solid var(--brand-border); }
+    .shadow-soft{ box-shadow: 0 10px 30px rgba(0,0,0,.25); }
+    .focus-ring:focus{ outline: 2px solid var(--brand-primary); outline-offset: 2px; }
+  </style>
+
+  <!-- Static JSON-LD (site-level). We add per-item JSON-LD dynamically in JS. -->
+  <script type="application/ld+json">
+  {
+    "@context":"https://schema.org",
+    "@type":"WebSite",
+    "name":"Cryptotrends VIP",
+    "url":"https://cryptotrends.vip/",
+    "potentialAction":{
+      "@type":"SearchAction",
+      "target":"https://cryptotrends.vip/?q={search_term}",
+      "query-input":"required name=search_term"
+    }
+  }
+  </script>
+</head>
+<body class="bg-brand text-brand min-h-screen">
+  <header class="sticky top-0 z-50 backdrop-blur supports-[backdrop-filter]:bg-black/40 border-b border-brand">
+    <div class="mx-auto max-w-6xl px-4 py-4 flex items-center gap-4">
+      <div class="flex items-center gap-3">
+        <svg class="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12a9 9 0 1 0 18 0A9 9 0 0 0 3 12Z"/><path d="M12 7v5l3 2"/></svg>
+        <a href="/" class="font-bold text-xl">Cryptotrends <span class="text-[var(--brand-primary)]">VIP</span></a>
+      </div>
+      <div class="ml-auto flex items-center gap-2">
+        <a id="rssLink" class="text-muted hover:underline" href="#" aria-label="RSS feed">RSS</a>
+        <a id="jsonLink" class="text-muted hover:underline" href="#" aria-label="JSON manifest">JSON</a>
+        <a id="sitemapLink" class="text-muted hover:underline" href="#" aria-label="Sitemap">Sitemap</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="mx-auto max-w-6xl px-4 py-10">
+    <!-- Hero -->
+    <section class="mb-10">
+      <div class="grid md:grid-cols-2 gap-6 items-center">
+        <div>
+          <h1 class="text-3xl md:text-4xl font-bold leading-tight">Daily Crypto Analysis & Chart Library</h1>
+          <p class="mt-3 text-muted">SEO-friendly, shareable insights. Pulls public charts & analysis from Supabase Storage. Filter by symbol, sort by date, and open full-size charts.</p>
+          <div class="mt-5 flex gap-3">
+            <a href="#feed" class="btn-primary rounded-xl px-5 py-3 font-medium transition-colors">Browse Analysis</a>
+            <a href="#about" class="rounded-xl px-5 py-3 font-medium transition-colors hover-surface border border-brand">How it works</a>
+          </div>
+        </div>
+        <div class="card rounded-2xl p-4 shadow-soft">
+          <img id="heroImage" alt="Sample crypto chart" class="rounded-xl w-full h-auto" src="" loading="eager" />
+        </div>
+      </div>
+    </section>
+
+    <!-- Controls -->
+    <section class="mb-6 card rounded-2xl p-4">
+      <div class="grid md:grid-cols-3 gap-3">
+        <label class="block">
+          <span class="text-sm text-muted">Search symbol</span>
+          <input id="q" class="w-full mt-1 rounded-xl surface border-brand border px-3 py-2 focus-ring" placeholder="e.g. BTCUSDT" />
+        </label>
+        <label class="block">
+          <span class="text-sm text-muted">Sort</span>
+          <select id="sort" class="w-full mt-1 rounded-xl surface border-brand border px-3 py-2 focus-ring">
+            <option value="recent">Most recent</option>
+            <option value="symbol">Symbol A→Z</option>
+          </select>
+        </label>
+        <div class="flex items-end gap-2">
+          <button id="apply" class="btn-primary rounded-xl px-4 py-2 font-medium">Apply</button>
+          <button id="clear" class="rounded-xl px-4 py-2 border border-brand hover-surface">Clear</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Feed -->
+    <section id="feed" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4"></section>
+
+    <!-- About -->
+    <section id="about" class="mt-14 card rounded-2xl p-6">
+    <h2 class="text-2xl font-bold mb-2">How it works</h2>
+    <p class="text-muted">Cryptotrends VIP updates automatically with the latest cryptocurrency analyses and charts, so you’re always looking at fresh insights. Simply search by symbol, explore detailed commentary, and open full-size charts — all in one place. There’s nothing to install or register for: just quick, transparent market intelligence from trusted sources.</p>
+    <p class="text-muted mt-2">Every analysis includes clear visuals and easy-to-understand summaries, helping you follow market movements and spot trends faster. Data refreshes daily so you can make informed decisions with confidence.</p>
+    <p class="text-muted mt-2">Want instant alerts? Follow our Telegram bot <a href="https://t.me/Alerts_123bot" target="_blank" rel="noopener" class="text-[var(--brand-primary)] hover:underline">@Alerts_123bot</a> to get notifications as soon as new analyses are published.</p>
+    </section>
+  </main>
+
+  <footer class="mt-10 border-t border-brand">
+    <div class="mx-auto max-w-6xl px-4 py-8 text-sm text-muted flex flex-wrap items-center gap-3">
+      <span>© <span id="year"></span> Cryptotrends VIP</span>
+      <span class="hidden md:inline">•</span>
+      <a class="hover:underline" href="/privacy.html">Privacy</a>
+      <a class="hover:underline" href="/robots.txt">Robots</a>
+    </div>
+  </footer>
+
+  <script>
+    // === CONFIG ===
+    const HISTORY_JSON_URL = localStorage.getItem('historyJsonUrl')
+      || 'https://brdnohsouzcolcymtsug.supabase.co/storage/v1/object/public/charts/2025-10-26/history.json';
+
+    // Update quick links
+    document.getElementById('jsonLink').href = HISTORY_JSON_URL;
+    document.getElementById('rssLink').href = '#';
+    document.getElementById('sitemapLink').href = '/sitemap.xml';
+
+    const $feed = document.getElementById('feed');
+    const $q = document.getElementById('q');
+    const $sort = document.getElementById('sort');
+    const $apply = document.getElementById('apply');
+    const $clear = document.getElementById('clear');
+    const $year = document.getElementById('year');
+    const $hero = document.getElementById('heroImage');
+    $year.textContent = new Date().getFullYear();
+
+    let items = [];
+
+    async function load() {
+      try {
+        const res = await fetch(HISTORY_JSON_URL, { cache: 'no-store' });
+        const json = await res.json();
+        items = Array.isArray(json) ? json : [];
+        if (items[0]?.img) $hero.src = items[0].img;
+        render();
+        attachJsonLd(items);
+      } catch (e) {
+        console.error('Failed to load history.json', e);
+        $feed.innerHTML = `<div class="col-span-full card rounded-2xl p-6">Failed to load data. Set your public history.json URL in localStorage:<br/><code>localStorage.setItem('historyJsonUrl', 'https://.../history.json')</code></div>`;
+      }
+    }
+
+    function filterAndSort(list){
+      const q = ($q.value||'').trim().toLowerCase();
+      let out = list.filter(x => !q || (x.symbol||'').toLowerCase().includes(q));
+      if ($sort.value === 'symbol') out.sort((a,b)=> (a.symbol||'').localeCompare(b.symbol||''));
+      else out.sort((a,b)=> (b.created_at||'').localeCompare(a.created_at||''));
+      return out;
+    }
+
+    function render(){
+      const data = filterAndSort(items);
+      if (!data.length){
+        $feed.innerHTML = `<div class='col-span-full text-muted'>No analysis yet.</div>`;
+        return;
+      }
+      $feed.innerHTML = data.map(toCard).join('');
+    }
+
+    function toCard(x){
+      const img = x.img || '';
+      const symbol = x.symbol || 'Unknown';
+      const analysis = (x.analysis||'').replace(/</g,'&lt;');
+      const alt = `${symbol} candlestick chart`;
+      return `
+      <article class="card rounded-2xl overflow-hidden hover-surface transition-colors" itemscope itemtype="https://schema.org/Article">
+        <a href="${img}" target="_blank" rel="noopener" aria-label="Open ${symbol} chart">
+          <img src="${img}" alt="${alt}" loading="lazy" class="w-full h-auto"/>
+        </a>
+        <div class="p-4">
+          <h3 class="text-lg font-semibold" itemprop="headline">${symbol}</h3>
+          <p class="text-sm text-muted mt-1" itemprop="description">${analysis}</p>
+        </div>
+        <meta itemprop="image" content="${img}" />
+        <meta itemprop="datePublished" content="${x.created_at||''}" />
+      </article>`
+    }
+
+    $apply.addEventListener('click', render);
+    $clear.addEventListener('click', ()=>{ $q.value=''; $sort.value='recent'; render(); });
+
+    function attachJsonLd(list){
+      const itemList = {
+        "@context":"https://schema.org",
+        "@type":"ItemList",
+        "name":"Crypto Analysis Feed",
+        "itemListElement": list.slice(0,50).map((x,i)=>({
+          "@type":"ListItem",
+          "position": i+1,
+          "url": x.img || ''
+        }))
+      };
+      const s = document.createElement('script');
+      s.type = 'application/ld+json';
+      s.text = JSON.stringify(itemList);
+      document.head.appendChild(s);
+    }
+
+    load();
+  </script>
+</body>
+</html>
