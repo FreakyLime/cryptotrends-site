@@ -4,7 +4,7 @@ on:
   push:
     branches: [ "main" ]
   schedule:
-    - cron: "0 */6 * * *"   # every 12 hours
+    - cron: "0 */6 * * *"
   workflow_dispatch:
 
 permissions:
@@ -13,8 +13,8 @@ permissions:
   id-token: write
 
 env:
-  BUCKET: /storage/v1/object/public
-  JSON_KEY: /charts/2025-10-26/history.json
+  PUBLIC_BASE: /storage/v1/object/public
+  PUBLIC_KEY: charts/2025-10-26/history.json
 
 jobs:
   build:
@@ -27,57 +27,74 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
         run: |
+          set -euo pipefail
           mkdir -p data
-          URL="$SUPABASE_URL/$BUCKET/$JSON_KEY"
+          URL="$SUPABASE_URL$PUBLIC_BASE/$PUBLIC_KEY"
           echo "Fetching $URL"
           curl -sSf "$URL" -o data/history.json
-          if [ ! -s data/history.json ]; then
-            echo "history.json is empty or missing"
-            exit 1
-          fi
-          echo "Downloaded data/history.json successfully"
+          test -s data/history.json || { echo "history.json is empty or missing"; exit 1; }
+          echo "Downloaded data/history.json"
 
       - name: Minify JSON
         run: |
           python - <<'PY'
-          import json
-          path = "data/history.json"
-          with open(path, "r", encoding="utf-8") as f:
+          import json, sys
+          p = "data/history.json"
+          with open(p, "r", encoding="utf-8") as f:
               j = json.load(f)
-          with open(path, "w", encoding="utf-8") as f:
-              json.dump(j, f, separators=(",", ":"), ensure_ascii=False)
+          with open(p, "w", encoding="utf-8") as f:
+              json.dump(j, f, ensure_ascii=False, separators=(",",":"))
           print("Minified data/history.json")
           PY
+
+      - name: Build dates.json from Supabase bucket
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SERVICE_KEY:  ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          BUCKET: charts
+        run: |
+          set -euo pipefail
+          mkdir -p data
+          LIST_URL="$SUPABASE_URL/storage/v1/object/list/$BUCKET"
+          echo "Listing $LIST_URL"
+          curl -sS -X POST \
+            -H "Authorization: Bearer $SERVICE_KEY" \
+            -H "apikey: $SERVICE_KEY" \
+            -H "Content-Type: application/json" \
+            "$LIST_URL" \
+            --data '{"prefix":"","limit":2000,"offset":0,"sortBy":{"column":"name","order":"desc"}}' \
+            -o /tmp/list.json
+
+          python - <<'PY'
+          import json, re, sys, os
+          path = "/tmp/list.json"
+          try:
+              L = json.load(open(path, "r", encoding="utf-8"))
+          except Exception as e:
+              print("Failed to parse list.json:", e)
+              sys.exit(1)
+
+          rx = re.compile(r'^(\d{4}-\d{2}-\d{2})\b')
+          dates = set()
+          # Expect object keys like "2025-10-26/history.json"
+          for it in L if isinstance(L, list) else []:
+              name = it.get("name","")
+              m = rx.match(name)
+              if m: dates.add(m.group(1))
+
+          out = "data/dates.json"
+          with open(out, "w", encoding="utf-8") as f:
+              json.dump(sorted(dates), f)
+          print("Wrote", out, "with", len(dates), "dates")
+          PY
+
+          test -s data/dates.json || { echo "dates.json was not generated"; cat /tmp/list.json || true; exit 1; }
 
       - name: Upload artifact for Pages
         uses: actions/upload-pages-artifact@v3
         with:
           path: .
 
-      - name: Build dates.json from public bucket
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SERVICE_KEY:  ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          BUCKET: charts
-        run: |
-          mkdir -p data
-          curl -sS -X POST \
-            -H "Authorization: Bearer $SERVICE_KEY" -H "apikey: $SERVICE_KEY" \
-            -H "Content-Type: application/json" \
-            "$SUPABASE_URL/storage/v1/object/list/$BUCKET" \
-            --data '{"prefix":"","limit":2000,"offset":0,"sortBy":{"column":"name","order":"desc"}}' \
-            -o /tmp/list.json
-          python - <<'PY'
-          import json,re,sys
-          L=json.load(open('/tmp/list.json','r'))
-          rx=re.compile(r'^(\d{4}-\d{2}-\d{2})\b')
-          dates=set()
-          for it in L:
-              m=rx.match(it['name'])
-              if m: dates.add(m.group(1))
-          with open('data/dates.json','w') as f: json.dump(sorted(dates), f)
-          print("Wrote data/dates.json with", len(dates), "dates")
-          PY
   deploy:
     environment:
       name: github-pages
