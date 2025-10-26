@@ -54,6 +54,30 @@ jobs:
         with:
           path: .
 
+      - name: Build dates.json from public bucket
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SERVICE_KEY:  ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          BUCKET: charts
+        run: |
+          mkdir -p data
+          curl -sS -X POST \
+            -H "Authorization: Bearer $SERVICE_KEY" -H "apikey: $SERVICE_KEY" \
+            -H "Content-Type: application/json" \
+            "$SUPABASE_URL/storage/v1/object/list/$BUCKET" \
+            --data '{"prefix":"","limit":2000,"offset":0,"sortBy":{"column":"name","order":"desc"}}' \
+            -o /tmp/list.json
+          python - <<'PY'
+          import json,re,sys
+          L=json.load(open('/tmp/list.json','r'))
+          rx=re.compile(r'^(\d{4}-\d{2}-\d{2})\b')
+          dates=set()
+          for it in L:
+              m=rx.match(it['name'])
+              if m: dates.add(m.group(1))
+          with open('data/dates.json','w') as f: json.dump(sorted(dates), f)
+          print("Wrote data/dates.json with", len(dates), "dates")
+          PY
   deploy:
     environment:
       name: github-pages
