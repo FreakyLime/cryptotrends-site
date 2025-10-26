@@ -1,0 +1,64 @@
+name: Build & Deploy (mirror public Supabase JSON)
+
+on:
+  push:
+    branches: [ "main" ]
+  schedule:
+    - cron: "0 */6 * * *"   # every 12 hours
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+env:
+  BUCKET: /storage/v1/object/public
+  JSON_KEY: /charts/2025-10-26/history.json
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Fetch public history.json from Supabase
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+        run: |
+          mkdir -p data
+          URL="$SUPABASE_URL/$BUCKET/$JSON_KEY"
+          echo "Fetching $URL"
+          curl -sSf "$URL" -o data/history.json
+          if [ ! -s data/history.json ]; then
+            echo "history.json is empty or missing"
+            exit 1
+          fi
+          echo "Downloaded data/history.json successfully"
+
+      - name: Minify JSON
+        run: |
+          python - <<'PY'
+          import json
+          path = "data/history.json"
+          with open(path, "r", encoding="utf-8") as f:
+              j = json.load(f)
+          with open(path, "w", encoding="utf-8") as f:
+              json.dump(j, f, separators=(",", ":"), ensure_ascii=False)
+          print("Minified data/history.json")
+          PY
+
+      - name: Upload artifact for Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+
+  deploy:
+    environment:
+      name: github-pages
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4
