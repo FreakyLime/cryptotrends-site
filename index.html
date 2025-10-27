@@ -1,338 +1,882 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Cryptotrends VIP – Daily Crypto Analysis & Charts</title>
-  <meta name="description" content="Pick a day, filter by symbol, and open full-size charts. The latest available date is auto-selected." />
-  <link rel="icon" href="/favicon.ico" />
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Cryptotrends VIP – Daily Crypto Analysis & Charts</title>
+    <meta
+      name="description"
+      content="Pick a day, filter by symbol, and open full-size charts. The latest available date is auto-selected."
+    />
+    <link rel="icon" href="/favicon.ico" />
 
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = { theme:{ extend:{ fontFamily:{ sans:['Inter','system-ui','Segoe UI','Roboto','Helvetica','Arial','sans-serif'] } } } }
-  </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: [
+                "Inter",
+                "system-ui",
+                "Segoe UI",
+                "Roboto",
+                "Helvetica",
+                "Arial",
+                "sans-serif",
+              ],
+            },
+          },
+        },
+      };
+    </script>
 
-  <style>
-    :root{
-      --brand-bg: rgb(8,15,23);
-      --brand-surface: rgb(16,24,35);
-      --brand-hover: rgba(255,255,255,0.06);
-      --brand-border: rgba(255,255,255,0.08);
-      --brand-text: rgba(255,255,255,0.92);
-      --brand-muted: rgba(255,255,255,0.64);
-      --brand-primary: rgb(16,185,129);
-      --brand-primary-hover: rgb(5,150,105);
-      --brand-card: rgba(255,255,255,0.04);
-    }
-    .bg-brand{ background: var(--brand-bg); }
-    .surface{ background: var(--brand-surface); }
-    .hover-surface:hover{ background: var(--brand-hover); }
-    .border-brand{ border-color: var(--brand-border); }
-    .text-brand{ color: var(--brand-text); }
-    .text-muted{ color: var(--brand-muted); }
-    .btn-primary{ background: var(--brand-primary); color:#fff; }
-    .btn-primary:hover{ background: var(--brand-primary-hover); }
-    .card{ background: var(--brand-card); border:1px solid var(--brand-border); }
-    .focus-ring:focus{ outline:2px solid var(--brand-primary); outline-offset:2px; }
-
-    .cal-btn{ border:1px solid var(--brand-border); height:2.25rem; display:flex; align-items:center; justify-content:center; border-radius:.5rem; transition:transform .08s ease, background-color .12s ease; }
-    .cal-btn--has:hover{ background: var(--brand-hover); }
-    .cal-btn--today{ box-shadow: 0 0 0 1px var(--brand-primary) inset; }
-    .cal-btn--selected{ background: var(--brand-primary); color:#fff; border-color: var(--brand-primary); box-shadow: 0 0 8px rgba(16,185,129,.35); }
-    .cal-btn--has:active{ transform: scale(.98); }
-
-    .feed-fade{ transition: opacity .18s ease; }
-
-    .lightbox{ position:fixed; inset:0; background:rgba(0,0,0,.8); display:none; align-items:center; justify-content:center; z-index:70; }
-    .lightbox.open{ display:flex; }
-    .lightbox img{ max-width:95vw; max-height:90vh; border-radius:1rem; box-shadow:0 20px 60px rgba(0,0,0,.6); }
-    .lightbox .close{ position:absolute; top:1rem; right:1rem; background:var(--brand-surface); border:1px solid var(--brand-border); color:var(--brand-text); padding:.5rem .75rem; border-radius:.75rem; }
-
-    .fab{ position:fixed; right:1.25rem; bottom:1.25rem; z-index:60; }
-
-    .img-wrap{ position:relative; overflow:hidden; background:var(--brand-surface); min-height:180px; }
-    .img-el{ width:100%; height:auto; display:block; opacity:0; transition:opacity .2s ease; }
-    .skel{ position:absolute; inset:0; background:linear-gradient(90deg, rgba(255,255,255,0.06) 25%, rgba(255,255,255,0.12) 37%, rgba(255,255,255,0.06) 63%); background-size:400% 100%; animation:shimmer 1.2s infinite; }
-    @keyframes shimmer{ 0%{background-position: 100% 0;} 100%{background-position: -100% 0;} }
-    .img-loaded .img-el{ opacity:1; }
-    .img-loaded .skel{ display:none; }
-    .img-broken .skel{ display:none; }
-    .no-chart{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; gap:.5rem; color:var(--brand-muted); font-weight:600; }
-    .no-chart svg{ width:22px; height:22px; }
-  </style>
-</head>
-<body class="bg-brand text-brand min-h-screen">
-  <header class="sticky top-0 z-50 backdrop-blur supports-[backdrop-filter]:bg-black/40 border-b border-brand">
-    <div class="mx-auto max-w-6xl px-4 py-4 flex items-center gap-4">
-      <div class="flex items-center gap-3">
-        <svg class="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12a9 9 0 1 0 18 0A9 9 0 0 0 3 12Z"/><path d="M12 7v5l3 2"/></svg>
-        <a href="/" class="font-bold text-xl">Cryptotrends <span class="text-[var(--brand-primary)]">VIP</span></a>
-      </div>
-      <div class="ml-auto flex items-center gap-3">
-        <a id="rssLink" class="text-muted hover:underline" href="#date-rss" aria-label="RSS">RSS</a>
-      </div>
-    </div>
-  </header>
-
-  <main class="mx-auto max-w-6xl px-4 py-10">
-    <section class="mb-10">
-      <div class="grid md:grid-cols-2 gap-6 items-start">
-        <div>
-          <h1 class="text-3xl md:text-4xl font-bold leading-tight">Daily Crypto Analysis & Chart Library</h1>
-          <p class="mt-3 text-muted">Pick a day, filter by symbol, and open full-size charts. We auto-select the most recent date with data.</p>
-          <div class="mt-5 flex gap-3">
-            <a href="#feed" class="btn-primary rounded-xl px-5 py-3 font-medium transition-colors">Browse Analysis</a>
-            <a href="#about" class="rounded-xl px-5 py-3 font-medium transition-colors hover-surface border border-brand">How it works</a>
-          </div>
-        </div>
-
-        <aside class="card rounded-2xl p-4 min-w-[320px] w-full" aria-label="Browse by date">
-          <div class="grid grid-cols-[auto_1fr_auto] items-center gap-2 mb-3">
-            <h2 class="font-semibold">Browse by date</h2>
-            <div id="calLabel" class="text-muted text-center"></div>
-            <button id="todayBtn" class="rounded-xl border border-brand px-3 py-1 hover-surface">Today</button>
-          </div>
-          <div class="grid grid-cols-[auto_1fr_auto] items-center gap-2 mb-2">
-            <button id="prevMonth" class="rounded-xl border border-brand px-3 py-1 hover-surface">Prev</button>
-            <div class="grid grid-cols-7 text-center text-[11px] text-muted">
-              <div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div><div>Sun</div>
-            </div>
-            <button id="nextMonth" class="rounded-xl border border-brand px-3 py-1 hover-surface">Next</button>
-          </div>
-          <div id="calGrid" class="grid grid-cols-7 gap-1"></div>
-        </aside>
-      </div>
-    </section>
-
-    <section class="mb-6">
-      <div class="card rounded-2xl p-4 w-full">
-        <div class="flex items-center justify-between mb-3"><h2 class="font-semibold">Filter</h2></div>
-        <div class="grid md:grid-cols-3 gap-3">
-          <label class="block">
-            <span class="text-sm text-muted">Search symbol</span>
-            <input id="q" class="w-full mt-1 rounded-xl surface border-brand border px-3 py-2 focus-ring" placeholder="e.g. BTCUSDT" />
-          </label>
-          <label class="block">
-            <span class="text-sm text-muted">Sort</span>
-            <select id="sort" class="w-full mt-1 rounded-xl surface border-brand border px-3 py-2 focus-ring">
-              <option value="recent">Most recent</option>
-              <option value="symbol">Symbol A→Z</option>
-            </select>
-          </label>
-          <div class="flex items-end gap-2">
-            <button id="apply" class="btn-primary rounded-xl px-4 py-2 font-medium">Apply</button>
-            <button id="clear" class="rounded-xl px-4 py-2 border border-brand hover-surface">Clear</button>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section id="feed" class="feed-fade grid sm:grid-cols-2 lg:grid-cols-3 gap-4"></section>
-
-    <section id="about" class="mt-14 card rounded-2xl p-6">
-      <h2 class="text-2xl font-bold mb-2">How it works</h2>
-      <p class="text-muted">Cryptotrends VIP updates automatically with the latest cryptocurrency analyses and charts. Search by symbol, explore commentary, and open full-size charts — no signup needed.</p>
-      <p class="text-muted mt-2">Every analysis includes clear visuals and easy summaries, refreshed daily.</p>
-      <p class="text-muted mt-2">Want instant alerts? Follow our Telegram bot <a href="https://t.me/Alerts_123bot" target="_blank" rel="noopener" class="text-[var(--brand-primary)] hover:underline">@Alerts_123bot</a>.</p>
-    </section>
-  </main>
-
-  <footer class="mt-10 border-t border-brand">
-    <div class="mx-auto max-w-6xl px-4 py-8 text-sm text-muted">
-      © 2025 Cryptotrends VIP
-    </div>
-  </footer>
-
-  <a class="fab btn-primary rounded-full w-12 h-12 flex items-center justify-center shadow-lg" href="https://t.me/Alerts_123bot" target="_blank" rel="noopener" aria-label="Telegram: @Alerts_123bot">
-    <svg viewBox="0 0 24 24" class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.6">
-      <path d="M22 2 11 13" /><path d="M22 2 15 22l-4-9-9-4 20-7Z" />
-    </svg>
-  </a>
-
-  <div id="lightbox" class="lightbox" role="dialog" aria-modal="true" aria-label="Chart preview">
-    <button class="close">Close</button>
-    <img id="lightboxImg" alt="Zoomed chart" />
-  </div>
-
-  <script>
-    const HISTORY_JSON_URL = 'data/history.json';
-    const DATES_JSON_URL   = 'data/dates.json';
-
-    const $feed   = document.getElementById('feed');
-    const $q      = document.getElementById('q');
-    const $sort   = document.getElementById('sort');
-    const $apply  = document.getElementById('apply');
-    const $clear  = document.getElementById('clear');
-    const $calGrid  = document.getElementById('calGrid');
-    const $calLabel = document.getElementById('calLabel');
-    const $todayBtn = document.getElementById('todayBtn');
-
-    let items = [];
-    let availableDates = new Set();
-    let calRef = new Date();
-    let selectedDateStr = null;
-    let minDateStr = null;
-    let maxDateStr = null;
-
-    function fmtYYYYMMDD(dt){const y=dt.getFullYear(),m=String(dt.getMonth()+1).padStart(2,'0'),d=String(dt.getDate()).padStart(2,'0');return `${y}-${m}-${d}`;}
-    function computeBounds(){ if(!availableDates.size){minDateStr=maxDateStr=null;return;} const a=[...availableDates].sort(); minDateStr=a[0]; maxDateStr=a[a.length-1]; }
-    function clampMonthToBounds(next){ if(!minDateStr||!maxDateStr) return next; const min=new Date(minDateStr.slice(0,7)+'-01'); const max=new Date(maxDateStr.slice(0,7)+'-01'); if(next<min) return min; if(next>max) return max; return next; }
-    function findNearestPrevAvailable(targetStr, maxDaysBack=365){ if(availableDates.has(targetStr)) return targetStr; let p=new Date(targetStr); for(let i=0;i<maxDaysBack;i++){ p.setDate(p.getDate()-1); const ds=fmtYYYYMMDD(p); if(availableDates.has(ds)) return ds; } return null; }
-
-    async function loadDefaultDay(){
-      const r = await fetch(HISTORY_JSON_URL,{cache:'no-store'}); const j=await r.json(); items=Array.isArray(j)?j:[];
-    }
-    async function tryLoadDatesJson(){
-      try{ const r=await fetch(DATES_JSON_URL,{cache:'no-store'}); if(!r.ok) return false; const list=await r.json(); if(Array.isArray(list)){ availableDates=new Set(list); computeBounds(); return true; } }catch{} return false;
-    }
-    function deriveDatesFromItems(){ const s=new Set(); for(const x of items){ if(!x.created_at) continue; const d=String(x.created_at).slice(0,10); if(/^\d{4}-\d{2}-\d{2}$/.test(d)) s.add(d);} availableDates=s; computeBounds(); }
-
-    async function loadDay(dateStr){
-      selectedDateStr = dateStr;
-      try{ const r=await fetch(`data/${dateStr}.json`,{cache:'no-store'}); if(r.ok){ const j=await r.json(); items=Array.isArray(j)?j:[]; fadeRender(); renderCalendar(); return; } }catch{}
-      await loadDefaultDay(); fadeRender(); renderCalendar();
-    }
-
-    function renderCalendar(){
-      const month=calRef.toLocaleString('en-US',{month:'long'}); $calLabel.textContent = `${month} ${calRef.getFullYear()}`;
-      const first=new Date(calRef.getFullYear(),calRef.getMonth(),1);
-      const last =new Date(calRef.getFullYear(),calRef.getMonth()+1,0);
-      const start=(first.getDay()||7)-1;
-      const total=start+last.getDate();
-      const rows=Math.ceil(total/7)*7;
-      const todayStr=fmtYYYYMMDD(new Date());
-      let html='';
-      for(let i=0;i<rows;i++){
-        const day=i-start+1, inMonth=day>=1 && day<=last.getDate();
-        if(!inMonth){ html+=`<div></div>`; continue; }
-        const dt=new Date(calRef.getFullYear(),calRef.getMonth(),day);
-        const ds=fmtYYYYMMDD(dt);
-        const has=availableDates.has(ds), isToday=ds===todayStr, isSel=ds===selectedDateStr;
-        let cls='cal-btn';
-        if(has){ cls+=' cal-btn--has'; if(isToday) cls+=' cal-btn--today'; if(isSel) cls+=' cal-btn--selected';
-          html+=`<button class="${cls}" onclick="(function(d){ calRef=new Date(d); loadDay(d); })(\`${ds}\`)">${day}</button>`;
-        } else { html+=`<button class="${cls} opacity-40" disabled>${day}</button>`; }
+    <style>
+      :root {
+        --brand-bg: rgb(8, 15, 23);
+        --brand-surface: rgb(16, 24, 35);
+        --brand-hover: rgba(255, 255, 255, 0.06);
+        --brand-border: rgba(255, 255, 255, 0.08);
+        --brand-text: rgba(255, 255, 255, 0.92);
+        --brand-muted: rgba(255, 255, 255, 0.64);
+        --brand-primary: rgb(16, 185, 129);
+        --brand-primary-btn-text: #303030;
+        --brand-primary-hover: rgb(5, 150, 105);
+        --brand-card: rgba(255, 255, 255, 0.04);
+        --radius: 4px;
       }
-      $calGrid.innerHTML = html;
-      document.getElementById('prevMonth').onclick=()=>{ calRef=clampMonthToBounds(new Date(calRef.getFullYear(),calRef.getMonth()-1,1)); renderCalendar(); };
-      document.getElementById('nextMonth').onclick=()=>{ calRef=clampMonthToBounds(new Date(calRef.getFullYear(),calRef.getMonth()+1,1)); renderCalendar(); };
-    }
+      .bg-brand {
+        background: var(--brand-bg);
+      }
+      .surface {
+        background: var(--brand-surface);
+      }
+      .hover-surface:hover {
+        background: var(--brand-hover);
+      }
+      .border-brand {
+        border-color: var(--brand-border);
+      }
+      .text-brand {
+        color: var(--brand-text);
+      }
+      .text-muted {
+        color: var(--brand-muted);
+      }
+      .btn-primary {
+        background: var(--brand-primary);
+        color: var(--brand-primary-btn-text);
+      }
+      .btn-primary:hover {
+        background: var(--brand-primary-hover);
+      }
+      .card {
+        background: var(--brand-card);
+        border: 1px solid var(--brand-border);
+      }
+      .focus-ring:focus {
+        outline: 2px solid var(--brand-primary);
+        outline-offset: 2px;
+      }
 
-    function filterAndSort(list){ const q=($q.value||'').trim().toLowerCase(); let out=list.filter(x=>!q||(x.symbol||'').toLowerCase().includes(q)); if($sort.value==='symbol') out.sort((a,b)=>(a.symbol||'').localeCompare(b.symbol||'')); else out.sort((a,b)=>(b.created_at||'').localeCompare(a.created_at||'')); return out; }
+      .cal-btn {
+        border: 1px solid var(--brand-border);
+        height: 2.25rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 0.5rem;
+        transition: transform 0.08s ease, background-color 0.12s ease;
+      }
+      .cal-btn--has:hover {
+        background: var(--brand-hover);
+      }
+      .cal-btn--today {
+        box-shadow: 0 0 0 1px var(--brand-primary) inset;
+      }
+      .cal-btn--selected {
+        background: var(--brand-primary);
+        color: var(--brand-primary-btn-text);
+        border-color: var(--brand-primary);
+        box-shadow: 0 0 8px rgba(16, 185, 129, 0.35);
+      }
+      .cal-btn--has:active {
+        transform: scale(0.98);
+      }
 
-    function toCard(x){
-      const img=x.img||'';
-      const symbol=x.symbol||'Unknown';
-      const analysis=(x.analysis||'').replace(/</g,'&lt;');
-      return `
-        <article class="card rounded-2xl overflow-hidden hover-surface transition-colors">
-          <button class="w-full text-left" ${img ? `data-zoom="${img}"` : ''} aria-label="${img ? `Open ${symbol} chart` : 'Chart unavailable'}" ${img ? '' : 'disabled'}>
-            <div class="img-wrap" data-imgwrap>
-              <div class="skel"></div>
-              <img src="${img}" alt="${symbol} candlestick chart" loading="lazy" class="img-el"/>
-              <div class="no-chart hidden">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 3l18 18"/><path d="M3 7h5l2 3 3-6 2 3h6"/><rect x="3" y="7" width="18" height="12" rx="2"/></svg>
-                <span>No chart</span>
+      .feed-fade {
+        transition: opacity 0.18s ease;
+      }
+
+      .lightbox {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.8);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 70;
+      }
+      .lightbox.open {
+        display: flex;
+      }
+      .lightbox img {
+        max-width: 95vw;
+        max-height: 90vh;
+        border-radius: 1rem;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+      }
+      .lightbox .close {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        background: var(--brand-surface);
+        border: 1px solid var(--brand-border);
+        color: var(--brand-text);
+        padding: 0.5rem 0.75rem;
+        border-radius: 0.75rem;
+      }
+
+      .fab {
+        position: fixed;
+        right: 1.25rem;
+        bottom: 1.25rem;
+        z-index: 60;
+      }
+
+      .img-wrap {
+        position: relative;
+        overflow: hidden;
+        background: var(--brand-surface);
+        min-height: 180px;
+      }
+      .img-el {
+        width: 100%;
+        height: auto;
+        display: block;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+      }
+      .skel {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+          90deg,
+          rgba(255, 255, 255, 0.06) 25%,
+          rgba(255, 255, 255, 0.12) 37%,
+          rgba(255, 255, 255, 0.06) 63%
+        );
+        background-size: 400% 100%;
+        animation: shimmer 1.2s infinite;
+      }
+      @keyframes shimmer {
+        0% {
+          background-position: 100% 0;
+        }
+        100% {
+          background-position: -100% 0;
+        }
+      }
+      .img-loaded .img-el {
+        opacity: 1;
+      }
+      .img-loaded .skel {
+        display: none;
+      }
+      .img-broken .skel {
+        display: none;
+      }
+      .no-chart {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        color: var(--brand-muted);
+        font-weight: 600;
+      }
+      .no-chart svg {
+        width: 22px;
+        height: 22px;
+      }
+
+      .r4,
+      .card,
+      .img-wrap,
+      .img-el,
+      .skel,
+      .lightbox img,
+      .cal-btn,
+      .fab,
+      .rounded-2xl,
+      .rounded-xl,
+      .rounded-lg,
+      .rounded-md,
+      .rounded,
+      .rounded-full {
+        border-radius: var(--radius) !important;
+      }
+      .status-badge {
+        position: absolute;
+        top: 0.5rem;
+        right: 0.5rem;
+        padding: 0.25rem 0.5rem;
+        font-size: 11px;
+        font-weight: 600;
+        border: 1px solid var(--brand-border);
+        border-radius: var(--radius);
+        background: var(--brand-card);
+        color: var(--brand-text);
+      }
+      .status-buy {
+        background: rgba(16, 185, 129, 0.15);
+        color: #a7f3d0;
+        border-color: rgba(16, 185, 129, 0.35);
+      }
+      .status-hold {
+        background: rgba(245, 158, 11, 0.15);
+        color: #fde68a;
+        border-color: rgba(245, 158, 11, 0.35);
+      }
+      .status-sell {
+        background: rgba(244, 63, 94, 0.15);
+        color: #fecdd3;
+        border-color: rgba(244, 63, 94, 0.35);
+      }
+    </style>
+  </head>
+  <body class="bg-brand text-brand min-h-screen">
+    <header
+      class="sticky top-0 z-50 backdrop-blur supports-[backdrop-filter]:bg-black/40 border-b border-brand"
+    >
+      <div class="mx-auto max-w-6xl px-4 py-4 flex items-center gap-4">
+        <div class="flex items-center gap-3">
+          <svg
+            class="w-8 h-8"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+          >
+            <path d="M3 12a9 9 0 1 0 18 0A9 9 0 0 0 3 12Z" />
+            <path d="M12 7v5l3 2" />
+          </svg>
+          <a href="/" class="font-bold text-xl"
+            >Cryptotrends
+            <span class="text-[var(--brand-primary)]">VIP</span></a
+          >
+        </div>
+        <div class="ml-auto flex items-center gap-3">
+          <a
+            id="rssLink"
+            class="text-muted hover:underline"
+            href="#date-rss"
+            aria-label="RSS"
+            >RSS</a
+          >
+        </div>
+      </div>
+    </header>
+
+    <main class="mx-auto max-w-6xl px-4 py-10">
+      <section class="mb-10">
+        <div class="grid md:grid-cols-2 gap-6 items-start">
+          <div>
+            <h1 class="text-3xl md:text-4xl font-bold leading-tight">
+              Daily Crypto Analysis & Chart Library
+            </h1>
+            <p class="mt-3 text-muted">
+              Pick a day, filter by symbol, and open full-size charts. We
+              auto-select the most recent date with data.
+            </p>
+            <div class="mt-5 flex gap-3">
+              <a
+                href="#feed"
+                class="btn-primary rounded-xl px-5 py-3 font-medium transition-colors"
+                >Browse Analysis</a
+              >
+              <a
+                href="#about"
+                class="rounded-xl px-5 py-3 font-medium transition-colors hover-surface border border-brand"
+                >How it works</a
+              >
+            </div>
+          </div>
+
+          <aside
+            class="card rounded-2xl p-4 min-w-[320px] w-full"
+            aria-label="Browse by date"
+          >
+            <div class="grid grid-cols-[auto_1fr_auto] items-center gap-2 mb-3">
+              <h2 class="font-semibold">Browse by date</h2>
+              <div id="calLabel" class="text-muted text-center"></div>
+              <button
+                id="todayBtn"
+                class="rounded-xl border border-brand px-3 py-1 hover-surface"
+              >
+                Today
+              </button>
+            </div>
+            <div class="grid grid-cols-[auto_1fr_auto] items-center gap-2 mb-2">
+              <button
+                id="prevMonth"
+                class="rounded-xl border border-brand px-3 py-1 hover-surface"
+              >
+                Prev
+              </button>
+              <div class="grid grid-cols-7 text-center text-[11px] text-muted">
+                <div>Mon</div>
+                <div>Tue</div>
+                <div>Wed</div>
+                <div>Thu</div>
+                <div>Fri</div>
+                <div>Sat</div>
+                <div>Sun</div>
               </div>
+              <button
+                id="nextMonth"
+                class="rounded-xl border border-brand px-3 py-1 hover-surface"
+              >
+                Next
+              </button>
             </div>
-          </button>
-          <div class="p-4">
-            <h3 class="text-lg font-semibold">${symbol}</h3>
-            <p class="text-sm text-muted mt-1">${analysis}</p>
+            <div id="calGrid" class="grid grid-cols-7 gap-1"></div>
+          </aside>
+        </div>
+      </section>
+
+      <section class="mb-6">
+        <div class="card rounded-2xl p-4 w-full">
+          <div class="flex items-center justify-between mb-3">
+            <h2 class="font-semibold">Filter</h2>
           </div>
-        </article>`;
-    }
+          <div class="grid md:grid-cols-3 gap-3">
+            <label class="block">
+              <span class="text-sm text-muted">Search symbol</span>
+              <input
+                id="q"
+                class="w-full mt-1 rounded-xl surface border-brand border px-3 py-2 focus-ring"
+                placeholder="e.g. BTCUSDT"
+              />
+            </label>
+            <label class="block">
+              <span class="text-sm text-muted">Sort</span>
+              <select
+                id="sort"
+                class="w-full mt-1 rounded-xl surface border-brand border px-3 py-2 focus-ring"
+              >
+                <option value="recent">Most recent</option>
+                <option value="symbol">Symbol A→Z</option>
+              </select>
+            </label>
+            <div class="flex items-end gap-2">
+              <button
+                id="apply"
+                class="btn-primary rounded-xl px-4 py-2 font-medium"
+              >
+                Apply
+              </button>
+              <button
+                id="clear"
+                class="rounded-xl px-4 py-2 border border-brand hover-surface"
+              >
+                Clear
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
 
-    function render(){
-      const data=filterAndSort(items);
-      $feed.innerHTML = data.length? data.map(toCard).join('') : `<div class='col-span-full text-muted'>No analysis yet.</div>`;
-      enhanceImages();
-    }
+      <section
+        id="feed"
+        class="feed-fade grid sm:grid-cols-2 lg:grid-cols-3 gap-4"
+      ></section>
 
-    function fadeRender(){ $feed.style.opacity='0'; requestAnimationFrame(()=>{ render(); requestAnimationFrame(()=>{ $feed.style.opacity='1'; }); }); }
+      <section id="about" class="mt-14 card rounded-2xl p-6">
+        <h2 class="text-2xl font-bold mb-2">How it works</h2>
+        <p class="text-muted">
+          Cryptotrends VIP updates automatically with the latest cryptocurrency
+          analyses and charts. Search by symbol, explore commentary, and open
+          full-size charts — no signup needed.
+        </p>
+        <p class="text-muted mt-2">
+          Every analysis includes clear visuals and easy summaries, refreshed
+          daily.
+        </p>
+        <p class="text-muted mt-2">
+          Want instant alerts? Follow our Telegram bot
+          <a
+            href="https://t.me/Alerts_123bot"
+            target="_blank"
+            rel="noopener"
+            class="text-[var(--brand-primary)] hover:underline"
+            >@Alerts_123bot</a
+          >.
+        </p>
+      </section>
+    </main>
 
-    function enhanceImages(){
-      document.querySelectorAll('[data-imgwrap]').forEach(w=>{
-        const img = w.querySelector('img');
-        const noChart = w.querySelector('.no-chart');
-        const btn = w.closest('button');
-        const onload=()=>{ w.classList.add('img-loaded'); };
-        const onerror=()=>{
-          w.classList.add('img-broken');
-          noChart.classList.remove('hidden');
-          if(btn){ btn.removeAttribute('data-zoom'); btn.setAttribute('aria-label','Chart unavailable'); btn.disabled=true; btn.classList.add('cursor-not-allowed','opacity-60'); }
-        };
-        if(!img.getAttribute('src')){ onerror(); return; }
-        if(img.complete){ if(img.naturalWidth>0) onload(); else onerror(); }
-        else { img.addEventListener('load', onload, {once:true}); img.addEventListener('error', onerror, {once:true}); }
-      });
-    }
+    <footer class="mt-10 border-t border-brand">
+      <div class="mx-auto max-w-6xl px-4 py-8 text-sm text-muted">
+        © 2025 Cryptotrends VIP
+      </div>
+    </footer>
 
-    document.getElementById('apply').addEventListener('click', fadeRender);
-    document.getElementById('clear').addEventListener('click', ()=>{ $q.value=''; $sort.value='recent'; fadeRender(); });
-    $todayBtn.addEventListener('click', ()=>{ const t=new Date(), ds=fmtYYYYMMDD(t); const target=findNearestPrevAvailable(ds); if(target){ calRef=new Date(target); loadDay(target); } renderCalendar(); });
+    <a
+      class="fab btn-primary rounded-full w-12 h-12 flex items-center justify-center shadow-lg"
+      href="https://t.me/Alerts_123bot"
+      target="_blank"
+      rel="noopener"
+      aria-label="Telegram: @Alerts_123bot"
+    >
+      <svg
+        viewBox="0 0 24 24"
+        class="w-6 h-6"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.6"
+      >
+        <path d="M22 2 11 13" />
+        <path d="M22 2 15 22l-4-9-9-4 20-7Z" />
+      </svg>
+    </a>
 
-    async function autoSelectAndLoad(){
-      const now=new Date(), ds=fmtYYYYMMDD(now);
-      let target=findNearestPrevAvailable(ds);
-      if(!target){ await loadDefaultDay(); fadeRender(); return; }
-      calRef=new Date(target); await loadDay(target);
-    }
+    <div
+      id="lightbox"
+      class="lightbox"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Chart preview"
+    >
+      <button class="close">Close</button>
+      <img id="lightboxImg" alt="Zoomed chart" />
+    </div>
 
-    const $lightbox = document.getElementById('lightbox');
-    const $lightboxImg = document.getElementById('lightboxImg');
-    document.addEventListener('click', (e)=>{
-      const btn = e.target.closest('[data-zoom]');
-      if(btn){
-        const src = btn.getAttribute('data-zoom');
-        if(src){ $lightboxImg.src = src; $lightbox.classList.add('open'); }
+    <script>
+      const SUPABASE_STORAGE_URL =
+        "https://brdnohsouzcolcymtsug.supabase.co/storage/v1/object/public/charts";
+      const DATES_JSON_URL = "data/dates.json";
+
+      const $feed = document.getElementById("feed");
+      const $q = document.getElementById("q");
+      const $sort = document.getElementById("sort");
+      const $apply = document.getElementById("apply");
+      const $clear = document.getElementById("clear");
+      const $calGrid = document.getElementById("calGrid");
+      const $calLabel = document.getElementById("calLabel");
+      const $todayBtn = document.getElementById("todayBtn");
+
+      let items = [];
+      let availableDates = new Set();
+      let calRef = new Date();
+      let selectedDateStr = null;
+      let minDateStr = null;
+      let maxDateStr = null;
+      let historyJsonUrl = "data/history.json";
+
+      function fmtYYYYMMDD(dt) {
+        const y = dt.getFullYear(),
+          m = String(dt.getMonth() + 1).padStart(2, "0"),
+          d = String(dt.getDate()).padStart(2, "0");
+        return `${y}-${m}-${d}`;
       }
-      if(e.target.classList.contains('close') || e.target === $lightbox){ $lightbox.classList.remove('open'); }
-    });
-    document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') $lightbox.classList.remove('open'); });
+      function computeBounds() {
+        if (!availableDates.size) {
+          minDateStr = maxDateStr = null;
+          return;
+        }
+        const a = [...availableDates].sort();
+        minDateStr = a[0];
+        maxDateStr = a[a.length - 1];
+      }
+      function clampMonthToBounds(next) {
+        if (!minDateStr || !maxDateStr) return next;
+        const min = new Date(minDateStr.slice(0, 7) + "-01");
+        const max = new Date(maxDateStr.slice(0, 7) + "-01");
+        if (next < min) return min;
+        if (next > max) return max;
+        return next;
+      }
+      function findNearestPrevAvailable(targetStr, maxDaysBack = 365) {
+        if (availableDates.has(targetStr)) return targetStr;
+        let p = new Date(targetStr);
+        for (let i = 0; i < maxDaysBack; i++) {
+          p.setDate(p.getDate() - 1);
+          const ds = fmtYYYYMMDD(p);
+          if (availableDates.has(ds)) return ds;
+        }
+        return null;
+      }
 
-    function buildRssXML(list,dateStr){
-      const esc = s => String(s||'').replace(/[<&>]/g,c=>({ '<':'&lt;','>':'&gt;','&':'&amp;' }[c]));
-      const itemsXML = list.map(x=>{
-        const link = x.img||'';
-        const pub  = x.created_at || (dateStr+'T00:00:00Z');
-        return `<item><title>${esc(x.symbol)}</title><link>${link}</link><guid isPermaLink="false">${link}</guid><pubDate>${new Date(pub).toUTCString()}</pubDate><description>${esc(x.analysis)}</description></item>`;
-      }).join('');
-      return `<?xml version="1.0" encoding="UTF-8"?>
+      const TS_RE =
+        /\s*\n*\s*(\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2})\s*\(UTC\)\s*$/;
+      const PREFIX_RE = /^\s*([A-Z0-9:/._-]+)\s*-\s*(BUY|HOLD|SELL)\.\s*/i;
+
+      function parseAnalysis(text) {
+        let cleaned = String(text || "");
+        let status = null;
+
+        const p = cleaned.match(PREFIX_RE);
+        if (p) {
+          status = p[2].toUpperCase();
+          cleaned = cleaned.replace(PREFIX_RE, "");
+        }
+
+        const t = cleaned.match(TS_RE);
+        let timestamp = null,
+          created_at = null;
+        if (t) {
+          timestamp = t[1] + " (UTC)";
+          cleaned = cleaned.replace(TS_RE, "");
+          created_at = t[1].replace(" ", "T") + "Z";
+        }
+
+        return { analysis: cleaned.trim(), status, timestamp, created_at };
+      }
+
+      function normalizeItems(list) {
+        return (Array.isArray(list) ? list : []).map((x) => {
+          const symbol = x.symbol || "Unknown";
+          const img = x.img || "";
+          const baseAnalysis = x.analysis || "";
+          const parsed = parseAnalysis(baseAnalysis);
+
+          const status =
+            (x.status || parsed.status || "").toUpperCase() || null;
+          const timestamp = x.timestamp || parsed.timestamp || null;
+          const created_at = x.created_at || parsed.created_at || null;
+
+          return {
+            ...x,
+            symbol,
+            img,
+            analysis: parsed.analysis,
+            status,
+            timestamp,
+            created_at,
+          };
+        });
+      }
+
+      async function loadDefaultDay(items) {
+        /* keep placeholder */
+      }
+
+      async function tryLoadDatesJson() {
+        try {
+          const r = await fetch(DATES_JSON_URL, { cache: "no-store" });
+          if (!r.ok) return false;
+          const list = await r.json();
+          if (Array.isArray(list)) {
+            availableDates = new Set(list);
+            computeBounds();
+            return true;
+          }
+        } catch {}
+        return false;
+      }
+
+      function deriveDatesFromItems() {
+        const s = new Set();
+        for (const x of items) {
+          if (!x.created_at) continue;
+          const d = String(x.created_at).slice(0, 10);
+          if (/^\d{4}-\d{2}-\d{2}$/.test(d)) s.add(d);
+        }
+        availableDates = s;
+        computeBounds();
+      }
+
+      async function loadDay(dateStr) {
+        selectedDateStr = dateStr;
+        try {
+          const r = await fetch(
+            SUPABASE_STORAGE_URL + `/${dateStr}/history.json`,
+            { cache: "no-store" }
+          );
+          if (r.ok) {
+            const j = await r.json();
+            items = normalizeItems(j);
+            fadeRender();
+            renderCalendar();
+            return;
+          }
+        } catch {}
+        await loadDefaultDay(items);
+        fadeRender();
+        renderCalendar();
+      }
+
+      function renderCalendar() {
+        const month = calRef.toLocaleString("en-US", { month: "long" });
+        $calLabel.textContent = `${month} ${calRef.getFullYear()}`;
+        const first = new Date(calRef.getFullYear(), calRef.getMonth(), 1);
+        const last = new Date(calRef.getFullYear(), calRef.getMonth() + 1, 0);
+        const start = (first.getDay() || 7) - 1;
+        const total = start + last.getDate();
+        const rows = Math.ceil(total / 7) * 7;
+        const todayStr = fmtYYYYMMDD(new Date());
+        let html = "";
+        for (let i = 0; i < rows; i++) {
+          const day = i - start + 1,
+            inMonth = day >= 1 && day <= last.getDate();
+          if (!inMonth) {
+            html += `<div></div>`;
+            continue;
+          }
+          const dt = new Date(calRef.getFullYear(), calRef.getMonth(), day);
+          const ds = fmtYYYYMMDD(dt);
+          const has = availableDates.has(ds),
+            isToday = ds === todayStr,
+            isSel = ds === selectedDateStr;
+          let cls = "cal-btn";
+          if (has) {
+            cls += " cal-btn--has";
+            if (isToday) cls += " cal-btn--today";
+            if (isSel) cls += " cal-btn--selected";
+            html += `<button class="${cls}" onclick="(function(d){ calRef=new Date(d); loadDay(d); })(\`${ds}\`)">${day}</button>`;
+          } else {
+            html += `<button class="${cls} opacity-40" disabled>${day}</button>`;
+          }
+        }
+        $calGrid.innerHTML = html;
+        document.getElementById("prevMonth").onclick = () => {
+          calRef = clampMonthToBounds(
+            new Date(calRef.getFullYear(), calRef.getMonth() - 1, 1)
+          );
+          renderCalendar();
+        };
+        document.getElementById("nextMonth").onclick = () => {
+          calRef = clampMonthToBounds(
+            new Date(calRef.getFullYear(), calRef.getMonth() + 1, 1)
+          );
+          renderCalendar();
+        };
+      }
+
+      function filterAndSort(list) {
+        const q = ($q.value || "").trim().toLowerCase();
+        let out = list.map((x) => x);
+        if (q)
+          out = out.filter((x) => (x.symbol || "").toLowerCase().includes(q));
+        if ($sort.value === "symbol")
+          out.sort((a, b) => (a.symbol || "").localeCompare(b.symbol || ""));
+        else
+          out.sort((a, b) =>
+            (b.created_at || "").localeCompare(a.created_at || "")
+          );
+        return out;
+      }
+
+      function statusBadge(s) {
+        if (!s) return "";
+        const cls =
+          {
+            BUY: "bg-emerald-500/15 text-emerald-300 border-emerald-400/30",
+            HOLD: "bg-amber-500/15  text-amber-300  border-amber-400/30",
+            SELL: "bg-rose-500/15   text-rose-300   border-rose-400/30",
+          }[s] || "bg-white/10 text-muted border-brand";
+        return `<span class="ml-2 text-[11px] px-10 py-0.5 rounded-full border ${cls}">${s}</span>`;
+      }
+
+      function toCard(x) {
+        const img = x.img || "";
+        const symbol = x.symbol || "Unknown";
+        const analysis = (x.analysis || "").replace(/</g, "&lt;");
+        const ts = x.timestamp
+          ? String(x.timestamp).replace(" (UTC)", " UTC")
+          : "";
+        const badge = statusBadge(x.status);
+
+        return `
+      <article class="card rounded-2xl overflow-hidden hover-surface transition-colors">
+        <button class="w-full text-left" ${
+          img ? `data-zoom="${img}"` : ""
+        } aria-label="${img ? `Open ${symbol} chart` : "Chart unavailable"}" ${
+          img ? "" : "disabled"
+        }>
+          <div class="img-wrap" data-imgwrap>
+            <div class="skel"></div>
+            <img src="${img}" alt="${symbol} candlestick chart" loading="lazy" class="img-el"/>
+            <div class="no-chart hidden">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 3l18 18"/><path d="M3 7h5l2 3 3-6 2 3h6"/><rect x="3" y="7" width="18" height="12" rx="2"/></svg>
+              <span>No chart</span>
+            </div>
+          </div>
+        </button>
+        <div class="p-4">
+          <h3 class="text-lg font-semibold flex justify-between items-center">
+  <span>${symbol}</span>
+  ${badge}
+</h3>
+
+          ${ts ? `<div class="text-xs text-muted mt-0.5">${ts}</div>` : ``}
+          <p class="text-sm text-muted mt-2">${analysis}</p>
+        </div>
+      </article>`;
+      }
+
+      function render() {
+        const data = filterAndSort(items);
+        $feed.innerHTML = data.length
+          ? data.map(toCard).join("")
+          : `<div class='col-span-full text-muted'>No analysis yet.</div>`;
+        enhanceImages();
+      }
+
+      function fadeRender() {
+        $feed.style.opacity = "0";
+        requestAnimationFrame(() => {
+          render();
+          requestAnimationFrame(() => {
+            $feed.style.opacity = "1";
+          });
+        });
+      }
+
+      function enhanceImages() {
+        document.querySelectorAll("[data-imgwrap]").forEach((w) => {
+          const img = w.querySelector("img");
+          const noChart = w.querySelector(".no-chart");
+          const btn = w.closest("button");
+          const onload = () => {
+            w.classList.add("img-loaded");
+          };
+          const onerror = () => {
+            w.classList.add("img-broken");
+            noChart.classList.remove("hidden");
+            if (btn) {
+              btn.removeAttribute("data-zoom");
+              btn.setAttribute("aria-label", "Chart unavailable");
+              btn.disabled = true;
+              btn.classList.add("cursor-not-allowed", "opacity-60");
+            }
+          };
+          if (!img.getAttribute("src")) {
+            onerror();
+            return;
+          }
+          if (img.complete) {
+            if (img.naturalWidth > 0) onload();
+            else onerror();
+          } else {
+            img.addEventListener("load", onload, { once: true });
+            img.addEventListener("error", onerror, { once: true });
+          }
+        });
+      }
+
+      document.getElementById("apply").addEventListener("click", fadeRender);
+      document.getElementById("clear").addEventListener("click", () => {
+        $q.value = "";
+        $sort.value = "recent";
+        fadeRender();
+      });
+      $todayBtn.addEventListener("click", () => {
+        const t = new Date(),
+          ds = fmtYYYYMMDD(t);
+        const target = findNearestPrevAvailable(ds);
+        if (target) {
+          calRef = new Date(target);
+          loadDay(target);
+        }
+        renderCalendar();
+      });
+
+      async function autoSelectAndLoad() {
+        const now = new Date(),
+          ds = fmtYYYYMMDD(now);
+        let target = findNearestPrevAvailable(ds);
+        if (!target) {
+          await loadDefaultDay();
+          fadeRender();
+          return;
+        }
+        calRef = new Date(target);
+        await loadDay(target);
+      }
+
+      const $lightbox = document.getElementById("lightbox");
+      const $lightboxImg = document.getElementById("lightboxImg");
+      document.addEventListener("click", (e) => {
+        const btn = e.target.closest("[data-zoom]");
+        if (btn) {
+          const src = btn.getAttribute("data-zoom");
+          if (src) {
+            $lightboxImg.src = src;
+            $lightbox.classList.add("open");
+          }
+        }
+        if (e.target.classList.contains("close") || e.target === $lightbox) {
+          $lightbox.classList.remove("open");
+        }
+      });
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") $lightbox.classList.remove("open");
+      });
+
+      function buildRssXML(list, dateStr) {
+        const esc = (s) =>
+          String(s || "").replace(
+            /[<&>]/g,
+            (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" }[c])
+          );
+        const itemsXML = list
+          .map((x) => {
+            const link = x.img || "";
+            const pub = x.created_at || dateStr + "T00:00:00Z";
+            return `<item><title>${esc(x.symbol)}${
+              x.status ? " - " + x.status : ""
+            }</title><link>${link}</link><guid isPermaLink="false">${link}</guid><pubDate>${new Date(
+              pub
+            ).toUTCString()}</pubDate><description>${esc(
+              x.analysis
+            )}</description></item>`;
+          })
+          .join("");
+        return `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0"><channel>
-<title>Cryptotrends VIP – ${dateStr||'Feed'}</title>
+<title>Cryptotrends VIP – ${dateStr || "Feed"}</title>
 <link>${location.origin}${location.pathname}</link>
 <description>Daily crypto chart analyses</description>
 <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
 ${itemsXML}
 </channel></rss>`;
-    }
-    function handleHashRouting(){
-      const h = location.hash || '';
-      if(!h.startsWith('#date-rss')) return;
-      const eq = h.indexOf('=');
-      const wantDate = eq>0 ? h.slice(eq+1) : selectedDateStr;
-      const emit = () => {
-        const xml = buildRssXML(items, wantDate || selectedDateStr);
-        const blob = new Blob([xml], { type: 'application/rss+xml;charset=utf-8' });
-        const url = URL.createObjectURL(blob);
-        location.hash = ''; window.open(url, '_blank');
-      };
-      if(!items.length && selectedDateStr){
-        loadDay(selectedDateStr).then(emit);
-      } else if(wantDate && wantDate!==selectedDateStr){
-        loadDay(wantDate).then(emit);
-      } else { emit(); }
-    }
-    window.addEventListener('hashchange', handleHashRouting);
+      }
 
-    (async function init(){
-      await loadDefaultDay();
-      const got=await tryLoadDatesJson(); if(!got) deriveDatesFromItems();
-      await autoSelectAndLoad();
-      renderCalendar();
-      if(location.hash.startsWith('#date-rss')) handleHashRouting();
-    })();
-  </script>
-</body>
+      function handleHashRouting() {
+        const h = location.hash || "";
+        if (!h.startsWith("#date-rss")) return;
+        const eq = h.indexOf("=");
+        const wantDate = eq > 0 ? h.slice(eq + 1) : selectedDateStr;
+        const emit = () => {
+          const xml = buildRssXML(items, wantDate || selectedDateStr);
+          const blob = new Blob([xml], {
+            type: "application/rss+xml;charset=utf-8",
+          });
+          const url = URL.createObjectURL(blob);
+          location.hash = "";
+          window.open(url, "_blank");
+        };
+        if (!items.length && selectedDateStr) {
+          loadDay(selectedDateStr).then(emit);
+        } else if (wantDate && wantDate !== selectedDateStr) {
+          loadDay(wantDate).then(emit);
+        } else {
+          emit();
+        }
+      }
+      window.addEventListener("hashchange", handleHashRouting);
+
+      (async function init() {
+        await loadDefaultDay();
+        const got = await tryLoadDatesJson();
+        if (!got) deriveDatesFromItems();
+        await autoSelectAndLoad();
+        renderCalendar();
+        if (location.hash.startsWith("#date-rss")) handleHashRouting();
+      })();
+    </script>
+  </body>
 </html>
